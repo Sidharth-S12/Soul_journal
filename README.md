@@ -1,10 +1,6 @@
 # SOUL Journal
 
 <p align="center">
-  <img src="src/ui/logo.jsx" alt="Soul Journal Logo" width="220"/>
-</p>
-
-<p align="center">
   <b>A professional trading journal & performance analytics terminal</b><br/>
   Log your edge. Review with honesty. Evolve daily.
 </p>
@@ -22,12 +18,6 @@
 ## Overview
 
 **Soul Journal** is a dark-themed, professional-grade trading journal built for serious traders. It combines real-time performance visualization, trade tracking, journaling, and psychology-aware insights into a single sleek terminal — designed to help traders develop discipline, track their edge, and grow consistently.
-
----
-
-## Screenshots
-
-> Dashboard with live P&L chart, stat cards, recent trades, and calendar heatmap.
 
 ---
 
