@@ -20,11 +20,11 @@ const Login = () => {
       {/* Cinematic Background Lighting */}
       <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-primary/10 blur-[120px] rounded-full animate-glow-pulse" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full opacity-50" />
-      
+
       {/* Modern Grid Overlay */}
       <div className="absolute inset-0 trading-grid-pattern opacity-10 pointer-events-none" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
@@ -34,11 +34,11 @@ const Login = () => {
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary-glow to-transparent opacity-50" />
 
         <div className="flex flex-col items-center mb-12">
-          <Logo className="scale-125 mb-4" />
-          <div className="flex items-center gap-2 mt-6">
-              <div className="h-[1px] w-8 bg-primary/30" />
-              <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.3em]">Authorized Access Only</p>
-              <div className="h-[1px] w-8 bg-primary/30" />
+          <Logo size="default" />
+          <div className="flex items-center gap-2 mt-4">
+            <div className="h-[1px] w-8 bg-primary/30" />
+            <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.3em]">Authorized Access Only</p>
+            <div className="h-[1px] w-8 bg-primary/30" />
           </div>
         </div>
 
@@ -47,7 +47,7 @@ const Login = () => {
             <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1 opacity-70">Terminal ID / Email</label>
             <div className="relative group">
               <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
-              <input 
+              <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -64,7 +64,7 @@ const Login = () => {
             </div>
             <div className="relative group">
               <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted group-focus-within:text-primary transition-colors" />
-              <input 
+              <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -72,7 +72,7 @@ const Login = () => {
                 className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-4 pl-14 pr-14 text-sm text-white outline-none focus:bg-white/[0.06] focus:border-primary/50 focus:shadow-[0_0_20px_rgba(255,0,61,0.1)] transition-all placeholder:text-text-muted/50"
                 required
               />
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-5 top-1/2 -translate-y-1/2 text-text-muted hover:text-white transition-colors"
@@ -84,8 +84,8 @@ const Login = () => {
 
           <div className="flex items-center justify-between px-1">
             <label className="flex items-center gap-3 cursor-pointer group">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 className="w-4 h-4 rounded border-white/10 bg-white/5 text-primary focus:ring-primary/20 cursor-pointer"
               />
               <span className="text-[11px] text-text-muted group-hover:text-text-secondary transition-colors font-bold uppercase tracking-tighter">Remember Terminal</span>
@@ -112,8 +112,8 @@ const Login = () => {
             </Link>
           </p>
           <div className="flex items-center gap-2 text-[10px] text-text-muted font-bold opacity-50 uppercase tracking-widest">
-              <ShieldCheck className="w-3 h-3" />
-              <span>Multi-Layer Encryption Active</span>
+            <ShieldCheck className="w-3 h-3" />
+            <span>Multi-Layer Encryption Active</span>
           </div>
         </div>
       </motion.div>
