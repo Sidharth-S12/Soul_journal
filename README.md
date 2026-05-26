@@ -1,7 +1,7 @@
 # SOUL Journal
 
 <p align="center">
-  <img src="src/assets/logo.svg" alt="Soul Journal Logo" width="220"/>
+  <img src="src/ui/logo.jsx" alt="Soul Journal Logo" width="220"/>
 </p>
 
 <p align="center">
