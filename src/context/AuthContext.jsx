@@ -8,10 +8,10 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   // Mocking user for UI/UX phase
-  const [currentUser, setCurrentUser] = useState({ 
-    email: 'trader@souljournal.com', 
+  const [currentUser, setCurrentUser] = useState({
+    email: 'trader@souljournal.com',
     emailVerified: true,
-    displayName: 'Master Trader' 
+    displayName: 'Master Trader'
   });
   const [loading, setLoading] = useState(false);
 
