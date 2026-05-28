@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, AlertCircle } from 'lucide-react';
+import { X, AlertCircle, CheckCircle } from 'lucide-react';
+import { saveTrade } from '../firebase/tradeService';
 
-const NewTrade = ({ isOpen, onClose, onSave }) => {
+const NewTrade = ({ isOpen, onClose, onSaveSuccess }) => {
   const [formData, setFormData] = useState({
     instrument: '',
     direction: 'Long',
@@ -25,6 +26,7 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
   });
 
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -33,63 +35,73 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
       ...prev,
       [name]: value
     }));
-    setError(''); // Clear error when user makes changes
+    setError('');
+    setSuccess('');
+  };
+
+  const validateForm = () => {
+    // Validate required fields
+    if (!formData.instrument || formData.instrument.trim() === '') {
+      setError('Please select an instrument');
+      return false;
+    }
+
+    if (!formData.entryPrice || isNaN(parseFloat(formData.entryPrice))) {
+      setError('Please enter a valid entry price');
+      return false;
+    }
+
+    if (!formData.direction || formData.direction.trim() === '') {
+      setError('Please select a direction');
+      return false;
+    }
+
+    return true;
   };
 
   const handleSave = async () => {
     try {
       setError('');
+      setSuccess('');
+
+      // Validate form
+      if (!validateForm()) {
+        return;
+      }
+
       setLoading(true);
-
-      // Validate required fields - check if they exist and aren't empty
-      if (!formData.instrument || formData.instrument.trim() === '') {
-        setError('Please select an instrument');
-        setLoading(false);
-        return;
-      }
-
-      if (!formData.entryPrice || formData.entryPrice.trim() === '') {
-        setError('Please enter entry price');
-        setLoading(false);
-        return;
-      }
-
-      if (!formData.direction || formData.direction.trim() === '') {
-        setError('Please select a direction');
-        setLoading(false);
-        return;
-      }
-
-      // Safely access the instrument - use optional chaining
-      const instrumentValue = formData.instrument?.toString() || '';
-      
-      if (instrumentValue.length === 0) {
-        setError('Invalid instrument selection');
-        setLoading(false);
-        return;
-      }
 
       // Prepare trade data
       const tradeData = {
-        ...formData,
+        instrument: formData.instrument?.toString() || '',
+        direction: formData.direction,
         entryPrice: parseFloat(formData.entryPrice) || 0,
+        entryTime: formData.entryTime || new Date().toISOString(),
         exitPrice: parseFloat(formData.exitPrice) || 0,
+        exitTime: formData.exitTime || '',
         positionSize: parseFloat(formData.positionSize) || 0,
         leverage: parseInt(formData.leverage) || 1,
+        strategy: formData.strategy || 'Custom',
         stopLoss: parseFloat(formData.stopLoss) || 0,
         takeProfit: parseFloat(formData.takeProfit) || 0,
+        riskPercent: parseFloat(formData.riskPercent) || 0,
+        rewardPercent: parseFloat(formData.rewardPercent) || 0,
+        result: formData.result,
         netPnL: parseFloat(formData.netPnL) || 0,
         rMultiple: parseFloat(formData.rMultiple) || 0,
         commissions: parseFloat(formData.commissions) || 0,
-        timestamp: new Date().toISOString()
+        tags: formData.tags || []
       };
 
-      console.log('Saving trade:', tradeData);
+      console.log('Saving trade to database:', tradeData);
 
-      // Call the save function
-      await onSave(tradeData);
+      // Save to Firebase
+      const result = await saveTrade(tradeData);
 
-      // Reset form on success
+      setSuccess('Trade saved successfully!');
+      console.log('Trade saved with ID:', result.id);
+
+      // Reset form
       setFormData({
         instrument: '',
         direction: 'Long',
@@ -111,10 +123,20 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
         tags: []
       });
 
-      onClose();
+      // Call success callback if provided
+      if (onSaveSuccess) {
+        setTimeout(() => {
+          onSaveSuccess(result);
+          onClose();
+        }, 1500);
+      } else {
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      }
     } catch (err) {
       console.error('Error saving trade:', err);
-      setError(err.message || 'Failed to save trade. Please try again.');
+      setError(err.message || 'Failed to save trade. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -160,13 +182,27 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
             </motion.div>
           )}
 
+          {/* Success Alert */}
+          {success && (
+            <motion.div
+              className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg flex items-start gap-3"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-green-500 font-bold text-sm">{success}</p>
+              </div>
+            </motion.div>
+          )}
+
           <div className="grid grid-cols-3 gap-6">
             {/* Basic Information */}
             <div className="col-span-1 space-y-4">
               <h3 className="text-sm font-black uppercase text-text-muted">Basic Info</h3>
               
               <div>
-                <label className="text-xs font-bold text-text-muted mb-2 block">Instrument</label>
+                <label className="text-xs font-bold text-text-muted mb-2 block">Instrument *</label>
                 <select
                   name="instrument"
                   value={formData.instrument}
@@ -183,7 +219,7 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-text-muted mb-2 block">Direction</label>
+                <label className="text-xs font-bold text-text-muted mb-2 block">Direction *</label>
                 <div className="flex gap-2">
                   {['Long', 'Short'].map(dir => (
                     <button
@@ -202,6 +238,21 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <label className="text-xs font-bold text-text-muted mb-2 block">Strategy</label>
+                <select
+                  name="strategy"
+                  value={formData.strategy}
+                  onChange={handleChange}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-primary outline-none"
+                >
+                  <option value="Custom">Custom</option>
+                  <option value="ICT - LIQ Sweep">ICT - LIQ Sweep</option>
+                  <option value="Breaker + FVG">Breaker + FVG</option>
+                  <option value="MSS + OB">MSS + OB</option>
+                </select>
+              </div>
             </div>
 
             {/* Trade Details */}
@@ -209,7 +260,7 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
               <h3 className="text-sm font-black uppercase text-text-muted">Trade Details</h3>
               
               <div>
-                <label className="text-xs font-bold text-text-muted mb-2 block">Entry Price</label>
+                <label className="text-xs font-bold text-text-muted mb-2 block">Entry Price *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -246,6 +297,19 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
                   placeholder="0.00"
                 />
               </div>
+
+              <div>
+                <label className="text-xs font-bold text-text-muted mb-2 block">Stop Loss</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="stopLoss"
+                  value={formData.stopLoss}
+                  onChange={handleChange}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-primary outline-none"
+                  placeholder="0.00"
+                />
+              </div>
             </div>
 
             {/* Results */}
@@ -274,7 +338,7 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-text-muted mb-2 block">Net P&L</label>
+                <label className="text-xs font-bold text-text-muted mb-2 block">Net P&L (USD)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -298,6 +362,19 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
                   placeholder="0.00"
                 />
               </div>
+
+              <div>
+                <label className="text-xs font-bold text-text-muted mb-2 block">Commissions</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="commissions"
+                  value={formData.commissions}
+                  onChange={handleChange}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-primary outline-none"
+                  placeholder="0.00"
+                />
+              </div>
             </div>
           </div>
 
@@ -305,16 +382,24 @@ const NewTrade = ({ isOpen, onClose, onSave }) => {
           <div className="flex gap-3 mt-8 pt-6 border-t border-white/10">
             <button
               onClick={onClose}
-              className="flex-1 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white font-bold transition-all"
+              disabled={loading}
+              className="flex-1 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={loading}
-              className="flex-1 py-3 px-4 bg-primary hover:bg-primary-glow text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-3 px-4 bg-primary hover:bg-primary-glow text-white font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? 'Saving...' : 'Save Trade'}
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Trade'
+              )}
             </button>
           </div>
         </div>
