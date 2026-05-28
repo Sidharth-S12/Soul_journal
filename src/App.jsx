@@ -11,6 +11,14 @@ import Login from './pages/Login';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
+import NewTrade from './pages/NewTrade';
+import Trades from './pages/Trades';
+import Calendar from './pages/Calendar';
+import Analytics from './pages/Analytics';
+import Journal from './pages/Journal';
+import Reports from './pages/Reports';
+import Goals from './pages/Goals';
+import Settings from './pages/Settings';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -22,14 +30,35 @@ function AnimatedRoutes() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } 
-        />
+
+        <Route path="/dashboard" element={
+          <ProtectedRoute><Dashboard /></ProtectedRoute>
+        } />
+        <Route path="/new-trade" element={
+          <ProtectedRoute><NewTrade /></ProtectedRoute>
+        } />
+        <Route path="/trades" element={
+          <ProtectedRoute><Trades /></ProtectedRoute>
+        } />
+        <Route path="/calendar" element={
+          <ProtectedRoute><Calendar /></ProtectedRoute>
+        } />
+        <Route path="/analytics" element={
+          <ProtectedRoute><Analytics /></ProtectedRoute>
+        } />
+        <Route path="/journal" element={
+          <ProtectedRoute><Journal /></ProtectedRoute>
+        } />
+        <Route path="/reports" element={
+          <ProtectedRoute><Reports /></ProtectedRoute>
+        } />
+        <Route path="/goals" element={
+          <ProtectedRoute><Goals /></ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute><Settings /></ProtectedRoute>
+        } />
+
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </AnimatePresence>

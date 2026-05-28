@@ -1,29 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #FF003D;
-  --color-primary-glow: #FF1744;
-  --color-primary-deep: #FF2E63;
+  --color-primary: #ff003c;
+  --color-primary-glow: #ff1a4d;
+  --color-primary-deep: #cc0030;
   
-  --color-bg-deepest: #020617;
-  --color-bg-darker: #030712;
-  --color-bg-dark: #050816;
-  --color-bg-slate: #070B1A;
+  --color-bg-deepest: #050505;
+  --color-bg-darker: #0b0b12;
+  --color-bg-dark: #0f0f18;
+  --color-bg-slate: #14141e;
   
-  --color-card-bg: rgba(10, 15, 30, 0.75);
-  --color-border-glass: rgba(255, 255, 255, 0.06);
+  --color-card-bg: rgba(11, 11, 18, 0.8);
+  --color-border-glass: rgba(255, 255, 255, 0.04);
   
   --color-text-main: #FFFFFF;
-  --color-text-secondary: #94A3B8;
-  --color-text-muted: #64748B;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
 
-  --color-trading-green: #00FF88;
-  --color-trading-green-glow: #00FFAA;
-  --color-trading-red: #FF003D;
-  --color-trading-red-glow: #FF1744;
+  --color-trading-green: #00ff88;
+  --color-trading-green-glow: #33ffaa;
+  --color-trading-red: #ff2e63;
+  --color-trading-red-glow: #ff4d7a;
 
-  --font-heading: 'Poppins', 'Outfit', sans-serif;
+  --font-heading: 'Sora', sans-serif;
   --font-body: 'Inter', sans-serif;
 
   --radius-xl: 1rem;

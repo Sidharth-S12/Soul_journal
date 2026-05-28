@@ -1,41 +1,36 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ExternalLink, MoreHorizontal, ArrowRight, ArrowLeft } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
-const trades = [
-  { asset: 'EURUSD', strategy: 'ICT - LIQ Sweep', direction: 'Long', result: 'Win', rMultiple: '+2.35R', pnl: '+$780.50', date: 'May 18, 2025', icon: '🇪🇺' },
-  { asset: 'XAUUSD', strategy: 'Breaker + FVG', direction: 'Short', result: 'Win', rMultiple: '+1.42R', pnl: '+$620.00', date: 'May 18, 2025', icon: '🥇' },
-  { asset: 'NAS100', strategy: 'MSS + OB', direction: 'Long', result: 'Loss', rMultiple: '-0.85R', pnl: '-$420.00', date: 'May 17, 2025', icon: '🇺🇸' },
-  { asset: 'GBPUSD', strategy: 'ICT - FVG', direction: 'Long', result: 'Win', rMultiple: '+1.87R', pnl: '+$550.00', date: 'May 17, 2025', icon: '🇬🇧' },
-];
-
-const RecentTradesTable = () => {
+const RecentTradesTable = ({ trades = [] }) => {
   return (
-    <div className="glass-panel flex flex-col h-full group">
-      <div className="p-8 border-b border-white/[0.03] flex justify-between items-center bg-white/[0.01]">
-        <div className="flex items-center gap-3">
-            <h2 className="text-sm font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                Recent Trades
-            </h2>
-        </div>
-        <button className="text-[10px] font-black text-text-muted hover:text-primary tracking-widest uppercase transition-all flex items-center gap-1.5 group/btn">
-            View all <ExternalLink className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
+    <div className="glass-panel overflow-hidden">
+      <div className="px-6 py-5 border-b border-white/[0.04] flex items-center justify-between">
+        <h3 className="text-sm font-black text-white uppercase tracking-widest">Recent Trades</h3>
+        <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-primary-glow transition-colors">
+          View All
         </button>
       </div>
       
+<<<<<<< HEAD
       <div className="flex-1 overflow-auto custom-scrollbar">
         <table className="w-full text-left border-separate border-spacing-y-3 px-6">
+=======
+      <div className="overflow-x-auto">
+        <table className="w-full">
+>>>>>>> 1242b10 (pages updated)
           <thead>
-            <tr className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em]">
-              <th className="px-6 py-4">Pair / Asset</th>
-              <th className="px-6 py-4">Direction</th>
-              <th className="px-6 py-4">Result</th>
-              <th className="px-6 py-4">R Multiple</th>
-              <th className="px-6 py-4">P&L</th>
-              <th className="px-6 py-4 text-right">Date</th>
+            <tr className="bg-white/[0.01]">
+              <th className="px-6 py-4 text-left text-[10px] font-black text-text-muted uppercase tracking-widest">Date</th>
+              <th className="px-6 py-4 text-left text-[10px] font-black text-text-muted uppercase tracking-widest">Symbol</th>
+              <th className="px-6 py-4 text-left text-[10px] font-black text-text-muted uppercase tracking-widest">Direction</th>
+              <th className="px-6 py-4 text-right text-[10px] font-black text-text-muted uppercase tracking-widest">P&L</th>
+              <th className="px-6 py-4 text-right text-[10px] font-black text-text-muted uppercase tracking-widest">R-Multiple</th>
+              <th className="px-6 py-4 text-left text-[10px] font-black text-text-muted uppercase tracking-widest">Setup</th>
+              <th className="px-6 py-4 text-right text-[10px] font-black text-text-muted uppercase tracking-widest">Action</th>
             </tr>
           </thead>
+<<<<<<< HEAD
           <tbody>
             {trades.map((trade, i) => (
               <motion.tr 
@@ -84,9 +79,55 @@ const RecentTradesTable = () => {
                 <div className={`absolute inset-y-0 left-0 w-1 ${trade.result === 'Win' ? 'bg-trading-green' : 'bg-trading-red'} rounded-l-2xl scale-y-0 group-hover/row:scale-y-100 transition-transform origin-center`} />
               </motion.tr>
             ))}
+=======
+          <tbody className="divide-y divide-white/[0.02]">
+            {trades.slice(0, 10).map((trade, idx) => {
+              const isProfit = trade.netPnl > 0;
+              const date = new Date(trade.entryTime || trade.createdAt?.toDate()).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+              });
+
+              return (
+                <motion.tr
+                   key={trade.id || idx}
+                   initial={{ opacity: 0, y: 10 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ delay: idx * 0.05 }}
+                   className="group hover:bg-white/[0.02] transition-all cursor-pointer"
+                >
+                  <td className="px-6 py-4 text-xs font-bold text-text-muted">{date}</td>
+                  <td className="px-6 py-4 text-xs font-black text-white">{trade.instrument}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${trade.direction === 'Long' ? 'bg-trading-green/10 text-trading-green' : 'bg-trading-red/10 text-trading-red'}`}>
+                      {trade.direction}
+                    </span>
+                  </td>
+                  <td className={`px-6 py-4 text-right text-xs font-black ${isProfit ? 'text-trading-green' : 'text-trading-red'}`}>
+                    {isProfit ? '+' : ''}${trade.netPnl?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className="px-6 py-4 text-right text-xs font-bold text-text-secondary">
+                    {trade.rMultiple ? `${trade.rMultiple}R` : '—'}
+                  </td>
+                  <td className="px-6 py-4 text-xs font-black text-text-secondary">{trade.setup || 'Custom'}</td>
+                  <td className="px-6 py-4 text-right">
+                    <button className="p-2 rounded-lg bg-white/5 border border-white/5 group-hover:bg-primary group-hover:border-primary transition-all">
+                      <ChevronRight className="w-3.5 h-3.5 text-white" />
+                    </button>
+                  </td>
+                </motion.tr>
+              );
+            })}
+>>>>>>> 1242b10 (pages updated)
           </tbody>
         </table>
       </div>
+      
+      {trades.length === 0 && (
+        <div className="py-20 text-center">
+          <p className="text-xs font-black text-text-muted uppercase tracking-widest">No trades recorded yet</p>
+        </div>
+      )}
     </div>
   );
 };
