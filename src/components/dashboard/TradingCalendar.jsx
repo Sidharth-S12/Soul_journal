@@ -1,106 +1,126 @@
-import React, { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+const DAYS   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
 
 const TradingCalendar = ({ trades = [] }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const today = new Date();
+  const [cal, setCal] = useState({ year: today.getFullYear(), month: today.getMonth() });
 
-  const calendarData = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const { dim, fdow, byDay, bestDay, worstDay } = useMemo(() => {
+    const { year, month } = cal;
+    const dim  = new Date(year, month + 1, 0).getDate();
+    const fdow = new Date(year, month, 1).getDay();
+    const byDay = {};
 
-    const statsByDay = {};
-    trades.forEach(t => {
-      const d = new Date(t.entryTime || t.createdAt?.toDate());
-      if (d.getFullYear() === year && d.getMonth() === month) {
-        const day = d.getDate();
-        if (!statsByDay[day]) statsByDay[day] = { pnl: 0, count: 0, wins: 0 };
-        statsByDay[day].pnl += (t.netPnl || 0);
-        statsByDay[day].count += 1;
-        if (t.result === 'Win' || t.netPnl > 0) statsByDay[day].wins += 1;
+    trades.filter(t => t.exitPrice).forEach(t => {
+      const raw = t.entryTime || t.createdAt?.toDate?.()?.toISOString?.() || '';
+      const d   = raw.split('T')[0];
+      if (!d) return;
+      const [y, m, day] = d.split('-').map(Number);
+      if (y === year && m - 1 === month) {
+        if (!byDay[day]) byDay[day] = { pnl: 0, count: 0, wins: 0 };
+        byDay[day].pnl   += t.netPnl || 0;
+        byDay[day].count += 1;
+        if (t.result === 'Win') byDay[day].wins += 1;
       }
     });
 
-    return { firstDay, daysInMonth, statsByDay };
-  }, [trades, currentDate]);
+    const days   = Object.entries(byDay);
+    const bestDay  = days.length ? Math.max(...days.map(([,v]) => v.pnl)) : 0;
+    const worstDay = days.length ? Math.min(...days.map(([,v]) => v.pnl)) : 0;
 
-  const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
-  const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
+    return { dim, fdow, byDay, bestDay, worstDay };
+  }, [trades, cal]);
 
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const monthName = currentDate.toLocaleString('default', { month: 'long' });
+  const fmt = (n) => n >= 0
+    ? `+$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+    : `-$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+
+  const isToday = (d) =>
+    today.getFullYear() === cal.year &&
+    today.getMonth()    === cal.month &&
+    today.getDate()     === d;
+
+  const prev = () => setCal(c => c.month === 0  ? { year: c.year - 1, month: 11 } : { ...c, month: c.month - 1 });
+  const next = () => setCal(c => c.month === 11 ? { year: c.year + 1, month: 0  } : { ...c, month: c.month + 1 });
 
   return (
-    <div className="glass-panel p-6">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h3 className="text-lg font-black text-white">{monthName} {currentDate.getFullYear()}</h3>
-          <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mt-1">Monthly Trading Performance</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={prevMonth} className="p-2 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all">
-            <ChevronLeft className="w-4 h-4 text-white" />
+    <div className="glass-panel p-6 group">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white">Trading Calendar</h3>
+        <div className="flex items-center gap-2">
+          <button onClick={prev} className="p-1 hover:bg-white/5 rounded-lg text-text-muted transition-colors">
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
-          <button onClick={nextMonth} className="p-2 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-all">
-            <ChevronRight className="w-4 h-4 text-white" />
+          <span className="text-[10px] font-black text-text-muted uppercase tracking-widest w-28 text-center">
+            {MONTHS[cal.month].slice(0,3)} {cal.year}
+          </span>
+          <button onClick={next} className="p-1 hover:bg-white/5 rounded-lg text-text-muted transition-colors">
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
-        {days.map(d => (
-          <div key={d} className="text-center text-[10px] font-black text-text-muted uppercase tracking-widest py-2">
-            {d}
-          </div>
+      {/* Day headers */}
+      <div className="grid grid-cols-7 mb-2">
+        {DAYS.map(d => (
+          <div key={d} className="text-center text-[8px] font-black text-text-muted uppercase tracking-widest py-1">{d}</div>
         ))}
-        {Array.from({ length: calendarData.firstDay }).map((_, i) => (
-          <div key={`empty-${i}`} className="aspect-square opacity-0" />
-        ))}
-        {Array.from({ length: calendarData.daysInMonth }).map((_, i) => {
-          const day = i + 1;
-          const stats = calendarData.statsByDay[day];
-          const isProfitable = stats?.pnl > 0;
-          const isLoss = stats?.pnl < 0;
+      </div>
 
+      {/* Day cells */}
+      <div className="grid grid-cols-7 gap-1">
+        {Array.from({ length: fdow }).map((_, i) => <div key={`e${i}`} />)}
+        {Array.from({ length: dim }, (_, i) => i + 1).map(d => {
+          const info   = byDay[d];
+          const profit = info?.pnl > 0;
+          const loss   = info?.pnl < 0;
           return (
-            <motion.div
-              key={day}
-              whileHover={{ scale: 1.05 }}
-              className={`aspect-square rounded-xl p-2 border flex flex-col justify-between transition-all relative overflow-hidden
-                ${stats 
-                  ? isProfitable 
-                    ? 'bg-trading-green/5 border-trading-green/20 shadow-[0_0_15px_rgba(0,255,136,0.05)]' 
-                    : isLoss 
-                      ? 'bg-trading-red/5 border-trading-red/20 shadow-[0_0_15px_rgba(255,46,99,0.05)]'
-                      : 'bg-white/5 border-white/10'
-                  : 'bg-white/[0.02] border-white/[0.03]'
+            <div
+              key={d}
+              title={info ? `${fmt(info.pnl)} · ${info.count} trade${info.count > 1 ? 's' : ''}` : undefined}
+              className={`aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] font-bold
+                transition-all cursor-pointer relative
+                ${isToday(d)
+                  ? 'bg-primary text-white shadow-[0_0_12px_rgba(255,0,61,0.5)]'
+                  : info
+                    ? profit
+                      ? 'bg-trading-green/15 text-trading-green border border-trading-green/20 hover:bg-trading-green/25'
+                      : 'bg-primary/15 text-primary border border-primary/20 hover:bg-primary/25'
+                    : 'text-text-muted hover:bg-white/[0.03] hover:text-white/60'
                 }`}
             >
-              <span className="text-[10px] font-bold text-text-muted">{day}</span>
-              {stats && (
-                <div className="text-center">
-                  <div className={`text-[10px] font-black ${isProfitable ? 'text-trading-green' : isLoss ? 'text-trading-red' : 'text-white'}`}>
-                    {isProfitable ? '+' : ''}{stats.pnl.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </div>
-                  <div className="flex items-center justify-center gap-1 mt-0.5">
-                    <span className="text-[8px] font-bold text-text-muted">{stats.count}T</span>
-                    <span className={`text-[8px] font-bold ${stats.wins/stats.count >= 0.5 ? 'text-trading-green' : 'text-trading-red'}`}>
-                      {Math.round((stats.wins / stats.count) * 100)}%
-                    </span>
-                  </div>
-                </div>
+              {d}
+              {info && (
+                <div className={`w-1 h-1 rounded-full mt-0.5 ${profit ? 'bg-trading-green' : 'bg-primary'}
+                  shadow-[0_0_4px_currentColor]`} />
               )}
-              {stats && isProfitable && (
-                <div className="absolute top-0 right-0 w-8 h-8 bg-trading-green/10 blur-xl rounded-full -translate-y-1/2 translate-x-1/2" />
-              )}
-              {stats && isLoss && (
-                <div className="absolute top-0 right-0 w-8 h-8 bg-trading-red/10 blur-xl rounded-full -translate-y-1/2 translate-x-1/2" />
-              )}
-            </motion.div>
+            </div>
           );
         })}
+      </div>
+
+      {/* Best / Worst day footer */}
+      <div className="flex justify-between items-center mt-5 pt-4 border-t border-white/[0.04]">
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-trading-green shadow-[0_0_5px_#00FF88]" />
+          <span className="text-[9px] font-bold text-text-muted">Best Day</span>
+          <span className="text-[9px] font-black text-trading-green ml-1">
+            {bestDay ? fmt(bestDay) : '—'}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_5px_#FF003D]" />
+          <span className="text-[9px] font-bold text-text-muted">Worst Day</span>
+          <span className="text-[9px] font-black text-primary ml-1">
+            {worstDay < 0 ? fmt(worstDay) : '—'}
+          </span>
+        </div>
       </div>
     </div>
   );

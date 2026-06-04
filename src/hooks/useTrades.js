@@ -1,26 +1,8 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/firebase';
 import { useAuth } from '../context/AuthContext';
 
-/**
- * useTrades — real-time Firestore listener for the current user's trades.
- *
- * Firestore path: users/{uid}/trades/{tradeId}
- *
- * Each trade document shape:
- * {
- *   uid, instrument, direction, setup, marketEnv, tags,
- *   entryPrice, entryTime, positionSize, sizeUnit, leverage,
- *   stopLoss, takeProfit, riskPct, rewardPct,
- *   exitPrice, exitTime, result, netPnl, currency,
- *   rMultiple, commissions,
- *   preAnalysis, tradePlan, execution,
- *   wentWell, improved, lessonsLearned,
- *   notes, attachments,
- *   createdAt (Firestore Timestamp)
- * }
- */
 export function useTrades() {
     const { currentUser } = useAuth();
     const [trades, setTrades] = useState([]);
@@ -28,14 +10,19 @@ export function useTrades() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        if (!currentUser?.uid) {
+        // Guard: must have a real Firebase uid
+        const uid = currentUser?.uid;
+        if (!uid) {
             setTrades([]);
             setLoading(false);
             return;
         }
 
+        setLoading(true);
+
+        // Path: users/{uid}/trades  — same path NewTrade.jsx writes to
         const q = query(
-            collection(db, 'users', currentUser.uid, 'trades'),
+            collection(db, 'users', uid, 'trades'),
             orderBy('createdAt', 'desc')
         );
 

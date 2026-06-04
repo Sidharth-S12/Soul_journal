@@ -93,7 +93,31 @@ export default function NewTrade() {
     });
 
     const set = (key, val) => {
-        setForm(f => ({ ...f, [key]: val }));
+        setForm(f => {
+            const updated = { ...f, [key]: val };
+            // Auto-sync result<->netPnl sign so they always agree
+            if (key === 'netPnl') {
+                const n = parseFloat(val);
+                if (!isNaN(n) && val !== '' && val !== '-') {
+                    // Typing a negative number → auto-set result to Loss
+                    if (n < 0) updated.result = 'Loss';
+                    // Typing a positive number → auto-set result to Win (only if currently Loss)
+                    else if (n > 0 && updated.result === 'Loss') updated.result = 'Win';
+                }
+            }
+            if (key === 'result') {
+                const n = parseFloat(f.netPnl);
+                if (!isNaN(n) && f.netPnl !== '') {
+                    // Clicking Loss: force netPnl negative
+                    if (val === 'Loss' && n > 0) updated.netPnl = String(-n);
+                    // Clicking Win: force netPnl positive
+                    if (val === 'Win' && n < 0) updated.netPnl = String(-n);
+                    // Clicking BE: zero out
+                    if (val === 'BE') updated.netPnl = '0';
+                }
+            }
+            return updated;
+        });
         if (error) setError('');
     };
 
@@ -117,7 +141,7 @@ export default function NewTrade() {
         try {
             // Defensively get UID, fallback to mock if needed (though Firebase addDoc needs real UID for subcollection)
             const uid = currentUser.uid || currentUser.id || 'mock-user-id';
-            
+
             console.log('Saving trade for user:', uid);
 
             const tradeData = {
@@ -139,7 +163,14 @@ export default function NewTrade() {
                 exitPrice: form.exitPrice ? parseFloat(form.exitPrice) : null,
                 exitTime: form.exitTime || null,
                 result: form.result || 'Win',
-                netPnl: parseFloat(form.netPnl) || 0,
+                netPnl: (() => {
+                    const raw = parseFloat(form.netPnl) || 0;
+                    // ALWAYS enforce correct sign based on result — source of truth is result button
+                    if (form.result === 'Loss') return Math.abs(raw) > 0 ? -Math.abs(raw) : 0;
+                    if (form.result === 'Win') return Math.abs(raw);
+                    if (form.result === 'BE') return 0;
+                    return raw;
+                })(),
                 currency: form.currency || 'USD',
                 rMultiple: parseFloat(form.rMultiple) || 0,
                 commissions: parseFloat(form.commissions) || 0,
@@ -154,7 +185,7 @@ export default function NewTrade() {
             };
 
             await addDoc(collection(db, 'users', uid, 'trades'), tradeData);
-            
+
             setSuccess('Trade saved successfully! Redirecting...');
             setTimeout(() => {
                 navigate('/dashboard');
@@ -200,7 +231,7 @@ export default function NewTrade() {
 
                 <div className="p-6 lg:p-10 max-w-[1600px] mx-auto">
                     {error && (
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                             className="mb-6 px-5 py-3 bg-primary/10 border border-primary/30 rounded-xl text-sm text-primary font-bold flex items-center gap-3"
                         >
@@ -210,7 +241,7 @@ export default function NewTrade() {
                     )}
 
                     {success && (
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                             className="mb-6 px-5 py-3 bg-trading-green/10 border border-trading-green/30 rounded-xl text-sm text-trading-green font-bold"
                         >
@@ -297,23 +328,42 @@ export default function NewTrade() {
                                     </Field>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-3">
                                     <Field label="Position Size">
-                                        <div className="flex gap-2">
-                                            <input value={form.positionSize} onChange={e => set('positionSize', e.target.value)}
-                                                placeholder="1.00" className={`${inputCls} flex-1`} type="number" step="any" />
-                                            <div className="relative">
-                                                <select value={form.sizeUnit} onChange={e => set('sizeUnit', e.target.value)}
-                                                    className={`${inputCls} pr-8 w-24 cursor-pointer appearance-none`}>
-                                                    {['Lots', 'Units', 'Contracts'].map(u => <option key={u} value={u} className="bg-bg-darker">{u}</option>)}
-                                                </select>
-                                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-text-muted pointer-events-none" />
-                                            </div>
+                                        <input
+                                            value={form.positionSize}
+                                            onChange={e => set('positionSize', e.target.value)}
+                                            placeholder="1.00"
+                                            className={inputCls}
+                                            type="number"
+                                            step="any"
+                                        />
+                                    </Field>
+
+                                    <Field label="Size Unit">
+                                        <div className="relative">
+                                            <select
+                                                value={form.sizeUnit}
+                                                onChange={e => set('sizeUnit', e.target.value)}
+                                                className={`${inputCls} appearance-none pr-8`}
+                                            >
+                                                {['Lots', 'Units', 'Contracts'].map(u => (
+                                                    <option key={u} value={u} className="bg-bg-darker">
+                                                        {u}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                                         </div>
                                     </Field>
+
                                     <Field label="Leverage">
-                                        <input value={form.leverage} onChange={e => set('leverage', e.target.value)}
-                                            placeholder="1" className={inputCls} />
+                                        <input
+                                            value={form.leverage}
+                                            onChange={e => set('leverage', e.target.value)}
+                                            placeholder="1"
+                                            className={inputCls}
+                                        />
                                     </Field>
                                 </div>
 
@@ -366,9 +416,9 @@ export default function NewTrade() {
                                         {['Win', 'Loss', 'BE'].map(r => (
                                             <button key={r} onClick={() => set('result', r)}
                                                 className={`py-3 rounded-xl text-sm font-black transition-all border ${form.result === r
-                                                    ? r === 'Win' ? 'bg-trading-green/15 border-trading-green/40 text-trading-green' 
-                                                    : r === 'Loss' ? 'bg-primary/15 border-primary/40 text-primary'
-                                                    : 'bg-white/10 border-white/30 text-white'
+                                                    ? r === 'Win' ? 'bg-trading-green/15 border-trading-green/40 text-trading-green'
+                                                        : r === 'Loss' ? 'bg-primary/15 border-primary/40 text-primary'
+                                                            : 'bg-white/10 border-white/30 text-white'
                                                     : 'bg-white/[0.03] border-white/10 text-text-muted hover:border-white/20'
                                                     }`}>
                                                 {r}
@@ -378,17 +428,45 @@ export default function NewTrade() {
                                 </Field>
 
                                 <Field label="Net P&L">
-                                    <div className="flex gap-2">
-                                        <input value={form.netPnl} onChange={e => set('netPnl', e.target.value)}
-                                            placeholder="0.00" className={`${inputCls} flex-1`} type="number" step="any" />
-                                        <div className="relative">
-                                            <select value={form.currency} onChange={e => set('currency', e.target.value)}
-                                                className={`${inputCls} w-20 pr-7 cursor-pointer appearance-none`}>
-                                                {['USD', 'EUR', 'GBP'].map(c => <option key={c} value={c} className="bg-bg-darker">{c}</option>)}
-                                            </select>
-                                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-text-muted pointer-events-none" />
-                                        </div>
-                                    </div>
+                                    {/* Live color + sign hint based on result */}
+                                    {(() => {
+                                        const raw = parseFloat(form.netPnl);
+                                        const isLoss = form.result === 'Loss';
+                                        const isBE = form.result === 'BE';
+                                        const effectiveVal = isBE ? 0 : isLoss ? (raw > 0 ? -raw : raw) : (raw < 0 ? -raw : raw);
+                                        const pnlColor = isBE ? '#94a3b8' : isLoss ? '#FF003D' : '#00FF88';
+                                        const borderColor = isBE ? 'rgba(148,163,184,0.35)' : isLoss ? 'rgba(255,0,61,0.35)' : 'rgba(0,255,136,0.35)';
+                                        const hint = isBE ? 'Break Even → $0.00 saved' : isLoss
+                                            ? `Will save as ${isNaN(raw) ? '-$0.00' : `-$${Math.abs(raw).toFixed(2)}`} (Loss)`
+                                            : `Will save as ${isNaN(raw) ? '+$0.00' : `+$${Math.abs(raw || 0).toFixed(2)}`} (Win)`;
+                                        return (
+                                            <>
+                                                <div className="flex gap-2">
+                                                    <div className="relative flex-1">
+                                                        <input
+                                                            value={form.netPnl}
+                                                            onChange={e => set('netPnl', e.target.value)}
+                                                            placeholder="0.00"
+                                                            style={{ borderColor, color: isNaN(raw) || form.netPnl === '' ? undefined : pnlColor }}
+                                                            className={`${inputCls} flex-1 w-full font-black`}
+                                                            type="number" step="any"
+                                                        />
+                                                    </div>
+                                                    <div className="relative">
+                                                        <select value={form.currency} onChange={e => set('currency', e.target.value)}
+                                                            className={`${inputCls} w-20 pr-7 cursor-pointer appearance-none`}>
+                                                            {['USD', 'EUR', 'GBP'].map(c => <option key={c} value={c} className="bg-bg-darker">{c}</option>)}
+                                                        </select>
+                                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-text-muted pointer-events-none" />
+                                                    </div>
+                                                </div>
+                                                {/* Live preview hint */}
+                                                <div style={{ fontSize: 10, fontWeight: 700, color: pnlColor, marginTop: 4, letterSpacing: '0.03em' }}>
+                                                    {hint}
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
                                 </Field>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -444,4 +522,4 @@ export default function NewTrade() {
             </main>
         </div>
     );
-}
+}

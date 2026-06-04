@@ -65,9 +65,11 @@
 }
 
 @layer components {
-  .glass-panel, .glass-card {
-    @apply bg-card-bg backdrop-blur-2xl border border-border-glass rounded-2xl relative overflow-hidden;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  .glass-panel {
+  background: #07111f;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 12px;
+  backdrop-filter: none;
   }
 
   .glass-card {

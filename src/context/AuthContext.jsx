@@ -1,4 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
+import { auth } from '../firebase/firebase';
 
 const AuthContext = createContext();
 
@@ -7,39 +16,41 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  // Mocking user for UI/UX phase
-  const [currentUser, setCurrentUser] = useState({
-    email: 'trader@souljournal.com',
-    emailVerified: true,
-    displayName: 'Master Trader'
-  });
-  const [loading, setLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const logout = () => {
-    setCurrentUser(null);
-  };
+  // ── Real Firebase Auth listener ───────────────────────────────────────────
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);   // user.uid is always present when logged in
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
 
-  const verifyEmail = () => {
-    return Promise.resolve();
-  };
+  // ── Auth methods ──────────────────────────────────────────────────────────
+  const login = (email, password) =>
+    signInWithEmailAndPassword(auth, email, password);
 
-  const login = (email, password) => {
-    setCurrentUser({ email, emailVerified: true });
-    return Promise.resolve();
-  };
+  const signup = (email, password) =>
+    createUserWithEmailAndPassword(auth, email, password);
 
-  const signup = (email, password) => {
-    setCurrentUser({ email, emailVerified: true });
-    return Promise.resolve();
-  };
+  const logout = () => signOut(auth);
+
+  const verifyEmail = () =>
+    currentUser ? sendEmailVerification(currentUser) : Promise.resolve();
+
+  const resetPassword = (email) =>
+    sendPasswordResetEmail(auth, email);
 
   const value = {
-    currentUser,
-    logout,
-    verifyEmail,
+    currentUser,   // always has .uid when logged in via Firebase
+    loading,
     login,
     signup,
-    loading
+    logout,
+    verifyEmail,
+    resetPassword,
   };
 
   return (
