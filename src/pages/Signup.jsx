@@ -3,17 +3,26 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
 import Logo from '../components/Logo';
+import { useAuth } from '../context/AuthContext';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const { signup } = useAuth();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    await signup(email, password);
     navigate('/dashboard');
-  };
+  } catch (error) {
+    alert(error.message);
+    console.error(error);
+  }
+};
 
   const passwordStrength = (pwd) => {
     if (pwd.length === 0) return 0;
