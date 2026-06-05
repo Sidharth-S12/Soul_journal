@@ -183,17 +183,6 @@ export default function Dashboard() {
     return { cumData, dailyData, ddData };
   }, [trades]);
 
-const risingData = useMemo(() => {
-  if (!cumData.length) return [];
-  return cumData.map((d, i) => {
-    const prev = i > 0 ? cumData[i - 1].v : d.v;
-    return {
-      ...d,
-      rising:  d.v >= prev ? d.v : prev,
-      falling: d.v <  prev ? d.v : prev,
-    };
-  });
-}, [cumData]);
 
   const chartData = useMemo(() => {
     return dailyData.map(item => ({
@@ -211,6 +200,14 @@ const risingData = useMemo(() => {
     }));
   }, [cumData]);
 
+  const cumGradientOffset = useMemo(() => {
+  if (!cumData.length) return 1;
+  const maxV = Math.max(...cumData.map(d => d.v));
+  const minV = Math.min(...cumData.map(d => d.v));
+  if (maxV <= 0) return 0;
+  if (minV >= 0) return 1;
+  return maxV / (maxV - minV);
+}, [cumData]);
   // ── Calendar ───────────────────────────────────────────────────────────────
   const calInfo = useMemo(() => {
     const { year, month } = cal;
@@ -454,43 +451,32 @@ const risingData = useMemo(() => {
                   <div style={{ height:150 }}>
                     {cumData.length ? (
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={risingData} margin={{top:4,right:4,left:-18,bottom:0}}>
+                        <AreaChart data={cumData} margin={{top:4,right:4,left:-18,bottom:0}}>
                           <defs>
-                            <linearGradient id="greenFill" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#00FF88" stopOpacity={0.5}/>
-                              <stop offset="100%" stopColor="#00FF88" stopOpacity={0.02}/>
+                            <linearGradient id="cumStroke" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset={cumGradientOffset} stopColor="#00FF88"/>
+                              <stop offset={cumGradientOffset} stopColor="#FF003D"/>
                             </linearGradient>
-                            <linearGradient id="redFill" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#FF003D" stopOpacity={0.5}/>
-                              <stop offset="100%" stopColor="#FF003D" stopOpacity={0.02}/>
+                            <linearGradient id="cumFill" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#00FF88" stopOpacity={0.4}/>
+                              <stop offset={cumGradientOffset} stopColor="#00FF88" stopOpacity={0.1}/>
+                              <stop offset={cumGradientOffset} stopColor="#FF003D" stopOpacity={0.1}/>
+                              <stop offset="100%" stopColor="#FF003D" stopOpacity={0.4}/>
                             </linearGradient>
                           </defs>
                           <CartesianGrid {...grid}/>
                           <XAxis dataKey="date" {...xAx}/>
-                          <YAxis {...yAx} domain={['auto', 'auto']} reversed={false}/>
+                          <YAxis {...yAx}/>
                           <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" strokeDasharray="3 3"/>
                           <Tooltip content={<Tip/>}/>
-                          {/* Green area for rising segments */}
                           <Area
                             type="monotone"
-                            dataKey="rising"
-                            stroke="#00FF88"
+                            dataKey="v"
+                            stroke="url(#cumStroke)"
                             strokeWidth={2}
-                            fill="url(#greenFill)"
+                            fill="url(#cumFill)"
                             dot={false}
-                            activeDot={{ r:4, fill:'#00FF88', strokeWidth:0 }}
-                            connectNulls
-                          />
-                          {/* Red area for falling segments */}
-                          <Area
-                            type="monotone"
-                            dataKey="falling"
-                            stroke="#FF003D"
-                            strokeWidth={2}
-                            fill="url(#redFill)"
-                            dot={false}
-                            activeDot={{ r:4, fill:'#FF003D', strokeWidth:0 }}
-                            connectNulls
+                            isAnimationActive={false}
                           />
                         </AreaChart>
                       </ResponsiveContainer>
