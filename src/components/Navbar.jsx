@@ -1,28 +1,32 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Bell, Clock, ChevronDown, Check } from 'lucide-react';
+import { Search, Bell, Clock, ChevronDown, Check, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const TIME_FILTERS = [
   { label: 'All Time',  value: 'all' },
   { label: 'This Year', value: 'year' },
   { label: 'Monthly',   value: 'month' },
-  { label: 'Weekly',    value: 'week' },
-  { label: 'Daily',     value: 'day' },
+  { label: 'Custom',    value: 'custom' },
 ];
 
-// Export context so Dashboard can read the selected filter
 export const TimeFilterContext = React.createContext('all');
 
 const Navbar = ({ onFilterChange }) => {
   const { currentUser } = useAuth();
   const displayName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Trader';
-  const [filter, setFilter]   = useState(TIME_FILTERS[0]);
-  const [open, setOpen]       = useState(false);
-  const dropRef               = useRef(null);
+  const [filter, setFilter]     = useState(TIME_FILTERS[0]);
+  const [open, setOpen]         = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate]     = useState('');
+  const dropRef                 = useRef(null);
+  const customRef               = useRef(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
-    const handler = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setOpen(false); };
+    const handler = (e) => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) setOpen(false);
+      if (customRef.current && !customRef.current.contains(e.target)) setShowCustom(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
@@ -30,7 +34,18 @@ const Navbar = ({ onFilterChange }) => {
   const select = (f) => {
     setFilter(f);
     setOpen(false);
-    onFilterChange?.(f.value);
+    if (f.value === 'custom') {
+      setShowCustom(true);
+    } else {
+      setShowCustom(false);
+      onFilterChange?.(f.value, null, null);
+    }
+  };
+
+  const applyCustom = () => {
+    if (!fromDate || !toDate) return;
+    setShowCustom(false);
+    onFilterChange?.('custom', fromDate, toDate);
   };
 
   return (
@@ -66,13 +81,66 @@ const Navbar = ({ onFilterChange }) => {
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_6px_#FF003D]" />
         </button>
 
+        {/* Custom date range picker */}
+        {showCustom && (
+          <div ref={customRef}
+            style={{
+              position:'absolute', top:60, right:180, zIndex:100,
+              background:'#111318', border:'1px solid #1e2130', borderRadius:12,
+              padding:16, display:'flex', flexDirection:'column', gap:10, minWidth:260,
+              boxShadow:'0 8px 32px rgba(0,0,0,0.5)'
+            }}>
+            <div style={{ fontSize:10, fontWeight:800, color:'#888', textTransform:'uppercase', letterSpacing:'0.15em', marginBottom:2 }}>
+              Custom Date Range
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              <label style={{ fontSize:9, color:'#475569', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em' }}>From</label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={e => setFromDate(e.target.value)}
+                style={{
+                  background:'#1a1d25', border:'1px solid #1e2130', borderRadius:8,
+                  padding:'6px 10px', color:'#fff', fontSize:11, outline:'none',
+                  colorScheme:'dark'
+                }}
+              />
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              <label style={{ fontSize:9, color:'#475569', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em' }}>To</label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={e => setToDate(e.target.value)}
+                style={{
+                  background:'#1a1d25', border:'1px solid #1e2130', borderRadius:8,
+                  padding:'6px 10px', color:'#fff', fontSize:11, outline:'none',
+                  colorScheme:'dark'
+                }}
+              />
+            </div>
+            <button
+              onClick={applyCustom}
+              disabled={!fromDate || !toDate}
+              style={{
+                background: fromDate && toDate ? '#FF003D' : '#2a2d3a',
+                color: fromDate && toDate ? '#fff' : '#475569',
+                border:'none', borderRadius:8, padding:'8px 0',
+                fontSize:10, fontWeight:800, textTransform:'uppercase',
+                letterSpacing:'0.15em', cursor: fromDate && toDate ? 'pointer' : 'not-allowed',
+                transition:'all 0.2s'
+              }}>
+              Apply Range
+            </button>
+          </div>
+        )}
+
         {/* Time filter dropdown */}
         <div className="relative" ref={dropRef}>
           <button
             onClick={() => setOpen(v => !v)}
             className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl
-                       hover:bg-white/[0.08] hover:border-white/20 transition-all"
-          >
+                       hover:bg-white/[0.08] hover:border-white/20 transition-all">
             <span className="text-[10px] font-black text-white uppercase tracking-widest">{filter.label}</span>
             <ChevronDown className={`w-3 h-3 text-text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
           </button>
@@ -107,4 +175,4 @@ const Navbar = ({ onFilterChange }) => {
   );
 };
 
-export default Navbar;
+export default Navbar; 

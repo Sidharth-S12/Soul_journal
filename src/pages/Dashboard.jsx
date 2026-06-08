@@ -23,7 +23,7 @@ const MONTHS = ['January','February','March','April','May','June',
   'July','August','September','October','November','December'];
 
 // Filter trades by time period
-const filterByPeriod = (trades, period, cal, selectedDay) => {
+const filterByPeriod = (trades, period, cal, selectedDay, customFrom, customTo) => {
   if (period === 'all') return trades;
   return trades.filter(t => {
     const d = t.entryTime
@@ -38,20 +38,18 @@ const filterByPeriod = (trades, period, cal, selectedDay) => {
         d.getDate() === selectedDay
       );
     }
-    if (period === 'week') {
-      if (!selectedDay) return false;
-      const selectedDate = new Date(cal.year, cal.month, selectedDay);
-      const startOfWeek = new Date(selectedDate);
-      startOfWeek.setDate(selectedDate.getDate() - selectedDate.getDay());
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-      return d >= startOfWeek && d <= endOfWeek;
-    }
     if (period === 'month') {
       return d.getFullYear() === cal.year && d.getMonth() === cal.month;
     }
     if (period === 'year') {
       return d.getFullYear() === cal.year;
+    }
+    if (period === 'custom') {
+      if (!customFrom || !customTo) return true;
+      const from = new Date(customFrom);
+      const to   = new Date(customTo);
+      to.setHours(23, 59, 59);
+      return d >= from && d <= to;
     }
     return true;
   });
@@ -125,10 +123,12 @@ export default function Dashboard() {
   const [cal, setCal]         = useState({ year: today.getFullYear(), month: today.getMonth() });
   const [selectedDay, setSelectedDay] = useState(null);
   const [tab, setTab]         = useState('recent');
+  const [customFrom, setCustomFrom] = useState(null);
+  const [customTo, setCustomTo]     = useState(null);
 
   const trades = useMemo(
-    () => filterByPeriod(allTrades, period, cal, selectedDay),
-    [allTrades, period, cal, selectedDay]
+    () => filterByPeriod(allTrades, period, cal, selectedDay, customFrom, customTo),
+    [allTrades, period, cal, selectedDay, customFrom, customTo]
   );
 
   // ── Stats ──────────────────────────────────────────────────────────────────
@@ -279,7 +279,13 @@ export default function Dashboard() {
       <Sidebar/>
 
       <div style={{ flex:1, marginLeft:160, display:'flex', flexDirection:'column' }}>
-        <Navbar onFilterChange={setPeriod}/>
+        <Navbar onFilterChange={(p, from, to) => {
+          setPeriod(p);
+          if (p === 'custom') {
+            setCustomFrom(from);
+            setCustomTo(to);
+          }
+        }}/>
 
         {/* ── TOP STATS BAR ────────────────────────────────────────────── */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', borderBottom:'1px solid #1e2130', background:'#0d0f14', flexShrink:0 }}>
